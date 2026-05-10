@@ -18,7 +18,7 @@ use crate::version::complete_version_metadata::CompleteVersionMetadata;
 use crate::version::os;
 use shared::version::version_metadata;
 
-const GC_OPTIONS: &[&str] = &[
+const LEGACY_GC_OPTIONS: &[&str] = &[
     "-XX:+UnlockExperimentalVMOptions",
     "-XX:+UseG1GC",
     "-XX:G1NewSizePercent=20",
@@ -29,6 +29,26 @@ const GC_OPTIONS: &[&str] = &[
     "-XX:+AlwaysPreTouch",
     "-XX:+ParallelRefProcEnabled",
 ];
+
+const MODERN_GC_OPTIONS: &[&str] = &["-XX:+UseZGC", "-XX:+UseStringDeduplication"];
+
+const JAVA_21_GC_OPTIONS: &[&str] = &[
+    "-XX:+UseZGC",
+    "-XX:+ZGenerational",
+    "-XX:+UseStringDeduplication",
+];
+
+fn get_gc_options(java_version: &str) -> &[&str] {
+    let java_major_version = java_version.parse::<u64>().unwrap_or(8);
+
+    if java_major_version >= 23 {
+        MODERN_GC_OPTIONS
+    } else if java_major_version >= 21 {
+        JAVA_21_GC_OPTIONS
+    } else {
+        LEGACY_GC_OPTIONS
+    }
+}
 
 #[cfg(target_os = "windows")]
 const PATHSEP: &str = ";";
@@ -156,7 +176,7 @@ pub async fn launch(
     );
 
     let mut java_options = [
-        GC_OPTIONS
+        get_gc_options(&version_metadata.get_java_version())
             .iter()
             .map(|&s| s.to_string())
             .collect::<Vec<_>>(),
