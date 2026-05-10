@@ -115,10 +115,7 @@ pub async fn get_download_entries<M>(
         .collect();
 
     let hashes = hash_files(to_hash.clone(), progress_bar.clone()).await?;
-    let hashes = to_hash
-        .into_iter()
-        .zip(hashes.into_iter())
-        .collect::<HashMap<_, _>>();
+    let hashes = to_hash.into_iter().zip(hashes).collect::<HashMap<_, _>>();
 
     let mut download_entries = HashMap::new();
     for entry in check_entries {
